@@ -2,25 +2,28 @@ import Link from "next/link";
 
 const Page = async () => {
   async function getData() {
-    // Fetch from both sources at the same time
-    const [mockRes, dbRes] = await Promise.all([
-      fetch(process.env.NEXT_PUBLIC_APIURL, { next: { revalidate: 10 } }),
-      fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/products`, { next: { revalidate: 10 } }),
-    ]);
+    try {
+      const [mockRes, dbRes] = await Promise.all([
+        fetch(process.env.NEXT_PUBLIC_APIURL, { next: { revalidate: 10 } }),
+        fetch(`${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/products`, { next: { revalidate: 10 } }),
+      ]);
 
-    const mockData = await mockRes.json();
-    const dbData = await dbRes.json();
+      const mockData = mockRes.ok ? await mockRes.json() : []
+      const dbData = dbRes.ok ? await dbRes.json() : []
 
-    const normalizedMock = mockData.map((d) => ({
-      _id: d.id,
-      name: d.name,
-      description: d.desc,
-      price: d.price,
-      image: d.image || null,
-    }))
+      const normalizedMock = mockData.map((d) => ({
+        _id: d.id,
+        name: d.name,
+        description: d.desc,
+        price: d.price,
+        image: d.image || null,
+      }))
 
-    // Merge both arrays
-    return [...normalizedMock, ...dbData]
+      return [...normalizedMock, ...dbData]
+    } catch (error) {
+      console.error("Failed to fetch products:", error)
+      return []
+    }
   }
 
   const myData = await getData();
@@ -43,8 +46,11 @@ const Page = async () => {
                   className="bg-warning bg-opacity-25 d-flex align-items-center justify-content-center"
                   style={{ height: "160px" }}
                 >
-
-                 <span style={{ fontSize: "70px" }}>🍯</span>
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/512/2224/2224543.png"
+                    alt="honey"
+                    style={{ width: "80px", height: "80px", objectFit: "contain" }}
+                  />
                 </div>
                 <div className="card-body d-flex flex-column text-center">
                   <h5 className="fw-bold">{d.name}</h5>
